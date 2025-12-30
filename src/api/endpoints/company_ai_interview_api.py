@@ -33,7 +33,7 @@ async def chat_interview(
     service = CompanyAIInterviewService(db)
     return await service.process_voice_answer(session_id, file)
 
-@router.get("/result/{interview_id}", response_model=company_ai_interview_response_dto.InterviewResultResponse)
+@router.get("/report/{interview_id}", response_model=company_ai_interview_response_dto.InterviewResultResponse)
 async def get_interview_result_by_id(
     interview_id: int,
     db: Session = Depends(get_db)

@@ -166,7 +166,7 @@
     </section>
 
     <section class="card">
-        <h2>💬 Q&A 상세 피드백 및 모범 답안</h2>
+        <h2>💬 면접 Q&A Log & 모범 답안</h2>
         <div class="qna-list" id="qna-container">
             </div>
     </section>
@@ -188,15 +188,36 @@
     // API 주소 (환경에 맞게 변경하세요)
     const API_BASE_URL = "http://100.115.252.51:8000";
 
+    // [NEW] 페이지 로드 시 URL 파라미터 확인 및 자동 실행
+    document.addEventListener("DOMContentLoaded", () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const idFromUrl = urlParams.get('id'); // ?id=2 에서 2를 가져옴
+
+        if (idFromUrl) {
+            // 1. input 필드에 값 채워넣기 (UI 동기화)
+            document.getElementById('input-jobseeker-id').value = idFromUrl;
+            
+            // 2. 자동으로 데이터 조회 실행
+            fetchData();
+        }
+    });
+
     async function fetchData() {
+        // 입력창에서 ID 가져오기 (URL에서 채워졌거나, 사용자가 직접 입력한 값)
         const id = document.getElementById('input-jobseeker-id').value;
         const btn = document.querySelector('button');
         
+        if (!id) {
+            alert("ID를 입력하거나 URL에 ?id=숫자 를 포함해주세요.");
+            return;
+        }
+
         try {
             btn.textContent = "로딩 중...";
             btn.disabled = true;
 
-            const response = await fetch(`${API_BASE_URL}/api/v1/company/ai-interview/result/${id}`);
+            // API 호출
+            const response = await fetch(`${API_BASE_URL}/api/v1/company/ai-interview/report/${id}`);
             
             if (!response.ok) {
                 throw new Error("데이터를 찾을 수 없습니다.");
@@ -208,7 +229,7 @@
         } catch (error) {
             console.error(error);
             alert(error.message);
-            // 테스트용 Mock Data (API 실패 시 보여줄 예시 데이터)
+            // 테스트용 Mock Data (실패 시 예시 데이터 렌더링)
             renderMockData(); 
         } finally {
             btn.textContent = "결과 조회";

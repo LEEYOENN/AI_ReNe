@@ -7,6 +7,10 @@ from elevenlabs import VoiceSettings
 from pydub import AudioSegment
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 from core.config import settings
+from dotenv import load_dotenv
+
+load_dotenv()
+
 class ElevenLabsTTSService:
     def __init__(self):
         self.api_key = settings.ELEVENLABS_API_KEY

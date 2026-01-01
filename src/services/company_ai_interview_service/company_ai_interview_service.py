@@ -242,7 +242,7 @@ class CompanyAIInterviewService:
             if ai_audio_bytes:
                 ai_audio_base64 = base64.b64encode(ai_audio_bytes).decode('utf-8')
 
-            print(f"면접 완료. session_id: {session_id}, current_turn: {session_record.current_turn}\ninterview_stage: {session_record.interview_stage}")
+            print(f"\n면접 완료. \nsession_id: {session_id}, \ncurrent_turn: {session_record.current_turn}\ninterview_stage: {session_record.interview_stage}\n")
             return company_ai_interview_response_dto.InterviewResponse(
                 message="200 OK, 면접 완료.",
                 session_id=session_id,
@@ -270,7 +270,7 @@ class CompanyAIInterviewService:
 
         # 7. Response 결과 반환
 
-        print(f"인터뷰 진행 중. session_id: {session_id}, current_turn: {session_record.current_turn}\ninterview_stage: {session_record.interview_stage}")
+        print(f"\n인터뷰 진행 중. \nsession_id: {session_id}, \ncurrent_turn: {session_record.current_turn}\ninterview_stage: {session_record.interview_stage}\n")
         return company_ai_interview_response_dto.InterviewResponse(
             message="200 OK, 인터뷰 진행 중.",
             session_id=session_id,
@@ -418,7 +418,7 @@ class CompanyAIInterviewService:
             best_answer = interview_result.best_answer,
             worst_answer = interview_result.worst_answer,
             total_advice = interview_result.total_advice,
-            better_answer_list = interview_result.better_answer_list,
+            better_answer_list = interview_result.better_answer_list or [],
             end_time = formatted_end_time
         )
         

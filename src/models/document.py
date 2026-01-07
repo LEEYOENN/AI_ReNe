@@ -60,6 +60,7 @@ class RecruitmentNotice(Base):
     created_at = Column(DateTime, nullable=False, server_default=func.now())
 
     job_group = relationship("JobGroup", back_populates="recruitment_notices")
+    vector_mappings = relationship("RecruitmentNoticeVectorMapping", back_populates="recruitment_notice", cascade="all, delete-orphan")
 
 
 

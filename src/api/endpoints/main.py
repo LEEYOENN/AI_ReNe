@@ -12,6 +12,7 @@ import company_ai_interview_api
 from upload_api import upload_router
 from jobseeker_profile_api import profile_router
 from view_router import view_router
+from recommendation_api import recommendation_router
 import uvicorn
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -24,6 +25,7 @@ app.include_router(p2p_router, prefix="/api/v1")
 app.include_router(upload_router, prefix="/api/v1")
 app.include_router(company_ai_interview_api.router, prefix="/api/v1")
 app.include_router(profile_router, prefix="/api/v1")
+app.include_router(recommendation_router, prefix="/api/v1", tags=["Recommendation"])
 app.include_router(view_router)
 
 # Static files mount

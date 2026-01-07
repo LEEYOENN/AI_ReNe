@@ -215,13 +215,16 @@ class NonContactInterview(Base):
     )
     start_time = Column(DateTime, nullable=False)
     is_end = Column(Boolean, default=False, nullable=False)
+    full_transcript = Column(LONGTEXT, nullable=True)
     report = Column(LONGTEXT, nullable=True)
     summary = Column(Text, nullable=True)
     total_score = Column(Float, nullable=True)
     skills_evaluation = Column(JSON, nullable=True) # 면접자가 말했던 기술들에 대한 레벨을 평가한 JSON
+    ai_result = Column(String(20), nullable=True)  # PASS, FAIL, HOLD
     best_answer = Column(Text, nullable=True)
     worst_answer = Column(Text, nullable=True)
     total_advice = Column(Text, nullable=True)
+    better_answer_list = Column(JSON, nullable=True) # 질문, 답변, 모범답안, 점수 리스트
     end_time = Column(DateTime, nullable=True)
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
 

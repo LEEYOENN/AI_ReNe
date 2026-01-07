@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P2P 모의 면접 분석 리포트</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #64748b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-sub: #475569;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', 'Apple SD Gothic Neo', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); line-height: 1.6; padding: 20px; }
+        
+        /* 레이아웃 컨테이너 */
+        .container { max-width: 1000px; margin: 0 auto; display: grid; gap: 24px; }
+
+        /* 헤더 */
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .logo { font-size: 1.5rem; font-weight: 800; color: var(--primary); }
+        .date-badge { background: #e2e8f0; padding: 6px 12px; border-radius: 20px; font-size: 0.9rem; color: var(--text-sub); }
+
+        /* 카드 공통 스타일 */
+        .card { background: var(--card-bg); border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); transition: transform 0.2s; }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); }
+        h2 { font-size: 1.2rem; margin-bottom: 16px; color: var(--text-main); font-weight: 700; border-left: 4px solid var(--primary); padding-left: 10px; }
+
+        /* 1. 종합 결과 섹션 (Hero) */
+        .summary-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
+        .score-box { text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; border-right: 1px solid #eee; padding-right: 20px; }
+        .total-score { font-size: 3.5rem; font-weight: 800; color: var(--primary); line-height: 1; }
+        .total-label { font-size: 0.9rem; color: var(--secondary); margin-top: 5px; }
+        .result-badge { margin-top: 10px; padding: 8px 24px; border-radius: 30px; color: white; font-weight: bold; font-size: 1.1rem; }
+        
+        .result-PASS { background-color: var(--success); }
+        .result-HOLD { background-color: var(--warning); }
+        .result-FAIL { background-color: var(--danger); }
+
+        .info-box { padding-left: 10px; }
+        .info-row { display: flex; margin-bottom: 8px; font-size: 0.95rem; }
+        .info-label { width: 100px; color: var(--secondary); font-weight: 600; }
+        .one-line-summary { background: #eff6ff; padding: 15px; border-radius: 8px; margin-top: 15px; color: var(--primary); font-weight: 600; font-size: 1.05rem; }
+
+        /* 2. 스킬 평가 섹션 */
+        .skills-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
+        .skill-item { background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .skill-header { display: flex; justify-content: space-between; margin-bottom: 8px; font-weight: 700; }
+        .progress-bg { height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+        .progress-bar { height: 100%; background: var(--primary); border-radius: 4px; width: 0%; transition: width 1s ease-in-out; }
+        .skill-reason { font-size: 0.85rem; color: var(--text-sub); line-height: 1.4; }
+
+        /* 3. 상세 리포트 */
+        .report-text { white-space: pre-line; color: var(--text-sub); font-size: 0.95rem; }
+
+        /* 4. Best & Worst Answer */
+        .answer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .answer-box { padding: 15px; border-radius: 8px; height: 100%; }
+        .answer-box.best { background-color: #ecfdf5; border: 1px solid #d1fae5; }
+        .answer-box.worst { background-color: #fef2f2; border: 1px solid #fee2e2; }
+        .answer-label { font-weight: 700; margin-bottom: 10px; display: block; }
+        .best .answer-label { color: #047857; }
+        .worst .answer-label { color: #b91c1c; }
+        
+        /* 5. Q&A 피드백 섹션 (NEW) */
+        .qna-list { display: flex; flex-direction: column; gap: 20px; }
+        .qna-item { border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; background: #fff; }
+        .qna-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9; }
+        .qna-question { font-weight: 700; font-size: 1.05rem; color: var(--text-main); width: 85%; }
+        .qna-question::before { content: "Q."; color: var(--primary); margin-right: 5px; font-size: 1.1rem; }
+        .qna-score { background: var(--secondary); color: white; padding: 4px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: bold; white-space: nowrap; }
+        
+        .qna-content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .qna-box { padding: 15px; border-radius: 8px; font-size: 0.9rem; }
+        .qna-box-label { display: block; font-weight: 700; margin-bottom: 8px; font-size: 0.85rem; }
+        
+        .user-answer { background: #f8fafc; border: 1px solid #e2e8f0; color: var(--text-sub); }
+        .user-answer .qna-box-label { color: var(--secondary); }
+        
+        .better-answer { background: #eff6ff; border: 1px solid #bfdbfe; color: var(--text-main); }
+        .better-answer .qna-box-label { color: var(--primary); }
+
+        /* 6. 종합 조언 */
+        .advice-box { background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; }
+
+        /* 컨트롤 패널 (테스트용) */
+        .control-panel { position: fixed; bottom: 20px; right: 20px; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid #eee; z-index: 100; }
+        input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; margin-right: 5px; width: 80px; }
+        button { padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #1d4ed8; }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .summary-grid, .answer-grid, .qna-content-grid { grid-template-columns: 1fr; }
+            .score-box { border-right: none; border-bottom: 1px solid #eee; padding-bottom: 20px; padding-right: 0; }
+            .total-score { font-size: 3rem; }
+        }
+
+        /* 인쇄 설정 */
+        @media print {
+            .control-panel { display: none; }
+            body { background: white; padding: 0; }
+            .card { box-shadow: none; border: 1px solid #ddd; page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="logo">ReNe P2P Interview Report</div>
+        <div class="date-badge" id="end-time">Date: -</div>
+    </header>
+
+    <section class="card summary-card">
+        <div class="summary-grid">
+            <div class="score-box">
+                <div class="total-score" id="total-score">-</div>
+                <div class="total-label">종합 점수 (100점 만점)</div>
+                <div class="result-badge" id="ai-result">-</div>
+            </div>
+            <div class="info-box">
+                <h2>지원자 정보</h2>
+                <div class="info-row"><div class="info-label">지원자 명</div><div id="jobseeker-name">-</div></div>
+                <div class="info-row"><div class="info-label">회사명</div><div id="company-name">-</div></div>
+                <div class="info-row"><div class="info-label">지원 직무 명</div><div id="job-group-name" style="font-size: 0.8rem; color: #888;">-</div></div>
+                
+                <div class="one-line-summary">
+                    💡 <span id="summary-text">데이터를 불러오는 중입니다...</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>🛠️ 역량 상세 평가</h2>
+        <div class="skills-grid" id="skills-container">
+            </div>
+    </section>
+
+    <section class="card">
+        <h2>📝 면접 상세 분석</h2>
+        <div class="report-text" id="report-text">
+            -
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="answer-grid">
+            <div class="answer-box best">
+                <span class="answer-label">👍 Best Answer (최고의 답변)</span>
+                <div id="best-answer">-</div>
+            </div>
+            <div class="answer-box worst">
+                <span class="answer-label">👎 Worst Answer (아쉬운 답변)</span>
+                <div id="worst-answer">-</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>💬 Q&A 상세 피드백 및 모범 답안</h2>
+        <div class="qna-list" id="qna-container">
+            </div>
+    </section>
+
+    <section class="card advice-box">
+        <h2>🚀 AI의 피드백 & 조언</h2>
+        <div class="report-text" id="total-advice">
+            -
+        </div>
+    </section>
+</div>
+
+<div class="control-panel">
+    <input type="number" id="input-jobseeker-id" value="1" placeholder="Interview ID">
+    <button onclick="fetchData()">결과 조회</button>
+</div>
+
+<script>
+    // API 주소 (환경에 맞게 변경하세요)
+    const API_BASE_URL = "http://100.115.252.51:8000";
+
+    async function fetchData() {
+        const id = document.getElementById('input-jobseeker-id').value;
+        const btn = document.querySelector('button');
+        
+        try {
+            btn.textContent = "로딩 중...";
+            btn.disabled = true;
+
+            const response = await fetch(`${API_BASE_URL}/api/v1/p2p/result/${id}`);
+            
+            if (!response.ok) {
+                throw new Error("데이터를 찾을 수 없습니다.");
+            }
+
+            const data = await response.json();
+            renderReport(data);
+
+        } catch (error) {
+            console.error(error);
+            alert(error.message);
+            // 테스트용 Mock Data (API 실패 시 보여줄 예시 데이터)
+            renderMockData(); 
+        } finally {
+            btn.textContent = "결과 조회";
+            btn.disabled = false;
+        }
+    }
+
+    function renderReport(data) {
+        // 1. 기본 정보
+        document.getElementById('jobseeker-name').textContent = data.jobseeker_name || '-';
+        document.getElementById('company-name').textContent = data.company_name || 'P2P Mock Interview';
+        document.getElementById('job-group-name').textContent = data.job_group_name;
+        document.getElementById('end-time').textContent = data.end_time || new Date().toLocaleString();
+
+        // 2. 종합 점수 및 결과
+        const scoreEl = document.getElementById('total-score');
+        const badgeEl = document.getElementById('ai-result');
+        
+        animateValue(scoreEl, 0, data.total_score, 1000);
+
+        badgeEl.textContent = data.ai_result;
+        badgeEl.className = `result-badge result-${data.ai_result}`;
+
+        document.getElementById('summary-text').textContent = data.summary;
+
+        // 3. 스킬 평가 (동적 생성)
+        const skillsContainer = document.getElementById('skills-container');
+        skillsContainer.innerHTML = ''; 
+
+        let skills = data.skills_evaluation;
+        if (typeof skills === 'string') {
+            try { skills = JSON.parse(skills); } catch(e) {}
+        }
+
+        if (Array.isArray(skills)) {
+            skills.forEach(skill => {
+                const percentage = (skill.score / 8) * 100; 
+                const html = `
+                    <div class="skill-item">
+                        <div class="skill-header">
+                            <span>${skill.skill_name}</span>
+                            <span style="color:var(--primary)">${skill.score} / 8</span>
+                        </div>
+                        <div class="progress-bg">
+                            <div class="progress-bar" style="width: 0%" data-width="${percentage}%"></div>
+                        </div>
+                        <div class="skill-reason">${skill.reason}</div>
+                    </div>
+                `;
+                skillsContainer.innerHTML += html;
+            });
+            
+            setTimeout(() => {
+                document.querySelectorAll('.progress-bar').forEach(bar => {
+                    bar.style.width = bar.dataset.width;
+                });
+            }, 100);
+        }
+
+        // 4. Q&A 상세 리스트 (NEW Logic)
+        const qnaContainer = document.getElementById('qna-container');
+        qnaContainer.innerHTML = ''; // 초기화
+
+        let qnaList = data.better_answer_list;
+        // 혹시 문자열로 올 경우 대비
+        if (typeof qnaList === 'string') {
+            try { qnaList = JSON.parse(qnaList); } catch(e) {}
+        }
+
+        if (Array.isArray(qnaList) && qnaList.length > 0) {
+            qnaList.forEach((item, idx) => {
+                const html = `
+                    <div class="qna-item">
+                        <div class="qna-header">
+                            <div class="qna-question">${item.question}</div>
+                            <div class="qna-score">답변 점수: ${item.score}점</div>
+                        </div>
+                        <div class="qna-content-grid">
+                            <div class="qna-box user-answer">
+                                <span class="qna-box-label">🙋‍♂️ 지원자 답변</span>
+                                <div class="qna-text">${item.user_answer}</div>
+                            </div>
+                            <div class="qna-box better-answer">
+                                <span class="qna-box-label">🤖 AI 제안 답변</span>
+                                <div class="qna-text">${item.better_answer}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                qnaContainer.innerHTML += html;
+            });
+        } else {
+            qnaContainer.innerHTML = '<div style="text-align:center; color:#999;">Q&A 상세 데이터가 없습니다.</div>';
+        }
+
+        // 5. 나머지 텍스트 필드
+        document.getElementById('report-text').textContent = data.report;
+        document.getElementById('best-answer').textContent = data.best_answer;
+        document.getElementById('worst-answer').textContent = data.worst_answer;
+        document.getElementById('total-advice').textContent = data.total_advice;
+    }
+
+    // 숫자 카운트업 함수
+    function animateValue(obj, start, end, duration) {
+        let startTimestamp = null;
+        const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            obj.innerHTML = Math.floor(progress * (end - start) + start);
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            } else {
+                obj.innerHTML = Math.round(end * 10) / 10; // 소수점 한자리까지
+            }
+        };
+        window.requestAnimationFrame(step);
+    }
+
+    // [테스트용] 백엔드 연결 안됐을 때 보여줄 가짜 데이터
+    function renderMockData() {
+        const mock = {
+            jobseeker_id: 1,
+            job_group_id: 3,
+            session_id: "mock-session-uuid-1234",
+            end_time: "2025.12.17 18:54",
+            total_score: 87.5,
+            ai_result: "PASS",
+            summary: "기술적 이해도가 매우 높으며, 실무 문제 해결 능력이 뛰어난 지원자입니다.",
+            report: "지원자는 Python 및 백엔드 아키텍처에 대한 깊은 이해를 보였습니다. 특히 비동기 처리와 DB 트랜잭션 관리에 대한 질문에서 구체적인 실무 경험을 근거로 논리적인 답변을 제시했습니다.",
+            skills_evaluation: [
+                { skill_name: "Python/Django", score: 7, reason: "ORM 최적화 및 비동기 처리에 대한 이해가 깊음" },
+                { skill_name: "Database", score: 8, reason: "인덱싱 전략과 트랜잭션 격리 수준을 정확히 설명함" },
+                { skill_name: "Communication", score: 6, reason: "핵심을 잘 전달하나, 다소 설명이 길어지는 경향이 있음" }
+            ],
+            // 새로 추가된 Q&A List 데이터
+            better_answer_list: [
+                {
+                    question: "Python의 GIL(Global Interpreter Lock)이 멀티스레딩 성능에 미치는 영향에 대해 설명해주세요.",
+                    user_answer: "GIL 때문에 파이썬에서는 멀티스레딩을 해도 CPU 코어를 하나만 씁니다. 그래서 속도가 안 빨라집니다. 병렬 처리가 안 돼서 그렇습니다.",
+                    better_answer: "Python의 GIL은 한 번에 하나의 스레드만 바이트코드를 실행하도록 제한하여 CPU 바운드 작업에서 멀티스레딩의 이점을 제한합니다. 하지만 I/O 바운드 작업에서는 GIL이 해제되므로 유효합니다. CPU 바운드 작업 병렬화를 위해서는 multiprocessing 모듈을 사용하는 것이 좋습니다.",
+                    score: 60
+                },
+                {
+                    question: "RDB에서 인덱스를 많이 걸었을 때 발생할 수 있는 부작용은 무엇인가요?",
+                    user_answer: "인덱스를 많이 걸면 조회는 빠른데, 데이터를 넣거나 수정할 때 느려집니다. 인덱스도 같이 수정해야 하니까요.",
+                    better_answer: "인덱스가 과도하면 INSERT, UPDATE, DELETE 시 인덱스 테이블도 갱신해야 하므로 쓰기 성능이 저하됩니다. 또한 추가적인 디스크 공간을 차지하며, 옵티마이저가 잘못된 실행 계획을 선택할 가능성도 생깁니다. 따라서 카디널리티가 높은 컬럼 위주로 신중하게 설정해야 합니다.",
+                    score: 85
+                }
+            ],
+            best_answer: "데드락 발생 시 해결 방안에 대한 질문에서 로그 분석 경험을 든 점이 인상적이었습니다.",
+            worst_answer: "Kubernetes 파드 스케일링 전략에 대해 구체적인 메트릭 기준을 제시하지 못했습니다.",
+            total_advice: "기술적 깊이는 충분하므로, 면접 시 결론부터 말하는 두괄식 화법을 연습한다면 더 좋은 평가를 받을 수 있을 것입니다."
+        };
+        console.log("Rendering Mock Data...");
+        renderReport(mock);
+    }
+</script>
+
+</body>
+</html>

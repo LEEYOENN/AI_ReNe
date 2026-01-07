@@ -1,14 +1,19 @@
 from fastapi import UploadFile, HTTPException
 from sqlalchemy.orm import Session
 import os, sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
+
+# 프로젝트 루트 경로를 sys.path에 추가 (src 상위 폴더)
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
+if project_root not in sys.path:
+    sys.path.append(project_root)
+
 from src.services.stt_service.faster_whisper_service import FasterWhisperService
-from src.models.interview import InterviewSession, ChatLog, ReneInterview
-from src.models.user import Jobseeker
+from src.models.interview import InterviewSession, ChatLog, ReneInterview, NonContactInterview
+from src.models.user import Jobseeker, JobGroup
 from src.models.document import Resume, Portfolio
 from src.core.database import SessionLocal
 from src.agents.p2p_auditor_agent import analyze_interview_transcript
-from src.schemas.p2p_schemas.p2p_response_dto import P2PChunkResponseDto, P2PReportResponseDto
+from src.schemas.p2p_schemas.p2p_response_dto import P2PChunkResponseDto, P2PReportResponseDto, P2PInterviewResultResponse
 from src.services.p2p_service.buffer_manager import buffer_manager
 from src.utils.audio_file_utils import pcm_to_wav_bytes
 from src.utils.pdf_utils import generate_pdf_from_markdown
@@ -83,11 +88,11 @@ async def process_p2p_audio_chunk(
         status="buffered"
     )
 
-async def finalize_p2p_interview() -> str:
+async def finalize_p2p_interview() -> int:
     """
-    [P2P] 인터뷰 종료 및 보고서 생성
+    [P2P] 인터뷰 종료 및 보고서 생성 (DB 저장)
     Returns:
-        str: 생성된 PDF 보고서 파일 경로
+        int: 생성된 NonContactInterview ID
     """
     session_id = DEFAULT_SESSION_ID
     
@@ -102,7 +107,6 @@ async def finalize_p2p_interview() -> str:
                 buffer_manager.save_transcript(session_id, last_speaker, transcribed_text)
 
     # 1. 구직자 프로필 구성 (DB 연동)
-    # 세션에 저장된 username(email)을 가져와서 구직자 조회
     session_username = buffer_manager.get_session_user(session_id)
     
     candidate_profile = {
@@ -116,12 +120,10 @@ async def finalize_p2p_interview() -> str:
     try:
         jobseeker = None
         if session_username:
-            # 이메일(username)로 구직자 조회
             jobseeker = db.query(Jobseeker).filter(Jobseeker.email == session_username).first()
             if not jobseeker:
                 print(f"[P2P Service] 해당 이메일의 구직자를 찾을 수 없습니다: {session_username}")
         else:
-            # Fallback: 하드코딩된 ID (테스트용)
             target_jobseeker_id = 2
             jobseeker = db.query(Jobseeker).filter(Jobseeker.id == target_jobseeker_id).first()
             print(f"[P2P Service] 세션 유저 정보가 없어 기본 ID({target_jobseeker_id})로 조회합니다.")
@@ -130,14 +132,11 @@ async def finalize_p2p_interview() -> str:
             candidate_profile["user_id"] = str(jobseeker.id)
             candidate_profile["name"] = jobseeker.name
             
-            # 가장 최근 포트폴리오 및 이력서 조회
             portfolio = db.query(Portfolio).filter(Portfolio.jobseeker_id == jobseeker.id).order_by(Portfolio.created_at.desc()).first()
             resume = db.query(Resume).filter(Resume.jobseeker_id == jobseeker.id).order_by(Resume.created_at.desc()).first()
             
-            # 구조화된 요약 생성
             summary_parts = []
             
-            # 1. Skills (Portfolio 우선, 없으면 Resume)
             skills_list = []
             if portfolio and portfolio.main_skills:
                 skills_list = portfolio.main_skills
@@ -145,7 +144,6 @@ async def finalize_p2p_interview() -> str:
                 skills_list = resume.skills
                 
             if skills_list:
-                # 문자열 리스트인 경우와 객체 리스트인 경우 모두 처리
                 normalized_skills = []
                 for s in skills_list:
                     if isinstance(s, str):
@@ -155,16 +153,13 @@ async def finalize_p2p_interview() -> str:
                 
                 summary_parts.append(f"# [Skills]\n- {', '.join(normalized_skills)}")
                 
-                # candidate_profile["skills"] 업데이트 (기존 로직 호환성 유지)
-                # 문자열 리스트를 객체 형태로 변환하여 저장
                 for s in normalized_skills:
                     candidate_profile["skills"].append({
                         "tech_keyword": s,
-                        "current_level": 1, # 기본값
+                        "current_level": 1,
                         "context": ""
                     })
 
-            # 2. Projects (Portfolio)
             if portfolio and portfolio.project_details:
                 projects_str = ["# [Key Projects]"]
                 for idx, proj in enumerate(portfolio.project_details, 1):
@@ -176,7 +171,6 @@ async def finalize_p2p_interview() -> str:
                 if len(projects_str) > 1:
                     summary_parts.append("\n".join(projects_str))
 
-            # 3. Experience (Resume)
             if resume and resume.work_experience:
                 exp_str = ["# [Experience]"]
                 for idx, exp in enumerate(resume.work_experience, 1):
@@ -188,7 +182,6 @@ async def finalize_p2p_interview() -> str:
                 if len(exp_str) > 1:
                     summary_parts.append("\n".join(exp_str))
             
-            # 4. Education (Resume)
             if resume and resume.education:
                 edu_str = ["# [Education]"]
                 for edu in resume.education:
@@ -196,70 +189,79 @@ async def finalize_p2p_interview() -> str:
                 if len(edu_str) > 1:
                     summary_parts.append("\n".join(edu_str))
 
-            # 요약본 저장 (없으면 기존 마크다운 사용)
             if summary_parts:
                 candidate_profile["portfolio_summary"] = "\n\n".join(summary_parts)
-                print(f"[P2P Service] 구조화된 요약 생성 완료 (길이: {len(candidate_profile['portfolio_summary'])})")
             elif portfolio and portfolio.markdown_content:
                 candidate_profile["portfolio_summary"] = portfolio.markdown_content
-                print("[P2P Service] 구조화된 데이터가 없어 원본 마크다운을 사용합니다.")
             else:
                 candidate_profile["portfolio_summary"] = "No portfolio data available."
 
         else:
-            print(f"[P2P Service] 구직자를 찾을 수 없습니다. (User ID: {target_jobseeker_id})")
+            print(f"[P2P Service] 구직자를 찾을 수 없습니다.")
             
-    except Exception as e:
-        print(f"[P2P Service] DB 조회 중 오류 발생: {e}")
-    finally:
-        db.close()
-        
-    # Fallback: 요약본이 없는 경우 더미 데이터
-    if not candidate_profile.get("portfolio_summary"):
-        print("[P2P Service] 포트폴리오 데이터를 가져오지 못해 더미 데이터를 사용합니다.")
-        candidate_profile["portfolio_summary"] = """
+        # Fallback for portfolio summary
+        if not candidate_profile.get("portfolio_summary"):
+            candidate_profile["portfolio_summary"] = """
 # [Basic Information]
 - **Name:** Unknown
 - **Summary:** No portfolio data available.
 """
-        # skills는 사용하지 않으므로 비워둠
-        candidate_profile["skills"] = []
+            candidate_profile["skills"] = []
 
-    print(f"[P2P Service] Candidate Profile Summary Length: {len(candidate_profile['portfolio_summary'])}")
+        # 2. 전체 대화록 구성
+        full_transcript = buffer_manager.get_full_transcript(session_id)
 
-    # 2. 전체 대화록 구성 (BufferManager에서 가져오기)
-    full_transcript = buffer_manager.get_full_transcript(session_id)
+        # 3. P2P Auditor Agent 호출
+        try:
+            analysis_result = analyze_interview_transcript(candidate_profile, full_transcript)
+        except Exception as e:
+            print(f"Agent Analysis Failed: {e}")
+            raise HTTPException(status_code=500, detail=f"Report generation failed: {e}")
 
-    # 3. P2P Auditor Agent 호출
-    try:
-        analysis_result = analyze_interview_transcript(candidate_profile, full_transcript)
-    except Exception as e:
-        print(f"Agent Analysis Failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Report generation failed: {e}")
-
-    # 4. 결과 저장 (DB 제거로 인해 생략)
-    
-    # [PDF 생성] Human Report를 PDF로 변환하여 저장
-    human_report_md = analysis_result.get("human_report", "")
-    if human_report_md:
-        pdf_filename = f"report_{session_id}.pdf"
-        # data/p2p_sessions/{session_id} 폴더는 삭제되므로, 상위 폴더나 별도 결과 폴더에 저장
-        # 여기서는 data/reports 폴더에 저장한다고 가정
-        report_dir = "data/reports"
-        if not os.path.exists(report_dir):
-            os.makedirs(report_dir, exist_ok=True)
-            
-        pdf_path = os.path.join(report_dir, pdf_filename)
-        generate_pdf_from_markdown(human_report_md, pdf_path)
-        print(f"PDF Report generated at: {pdf_path}")
+        # 4. 결과 저장 (DB)
+        update_data = analysis_result.get("update_data", {})
+        human_report = analysis_result.get("human_report", "")
         
-        # 세션 데이터 정리 (파일 삭제)
+        # Job Group 조회 (Fallback)
+        job_group = db.query(JobGroup).first()
+        job_group_id = job_group.id if job_group else 1 # Default to 1 if no job group found
+
+        # NonContactInterview 생성
+        interview_result = NonContactInterview(
+            jobseeker_id=int(candidate_profile["user_id"]) if candidate_profile["user_id"] != "Unknown" else 2,
+            job_group_id=job_group_id,
+            start_time=datetime.now(), # 임시
+            end_time=datetime.now(),
+            is_end=True,
+            report=update_data.get("report", human_report), # JSON의 report 우선, 없으면 Markdown
+            summary=update_data.get("summary", "요약 정보 없음"),
+            total_score=update_data.get("total_score", 0.0),
+            skills_evaluation=update_data.get("skills_evaluation", []),
+            ai_result=update_data.get("ai_result", "HOLD"),
+            best_answer=update_data.get("best_answer", ""),
+            worst_answer=update_data.get("worst_answer", ""),
+            total_advice=update_data.get("total_advice", ""),
+            better_answer_list=update_data.get("better_answer_list", []),
+            full_transcript=full_transcript
+        )
+        
+        db.add(interview_result)
+        db.commit()
+        db.refresh(interview_result)
+        
+        print(f"[P2P Service] Interview Result Saved. ID: {interview_result.id}")
+        
+        # 세션 데이터 정리
         # buffer_manager.clear_session(session_id)
 
-        return pdf_path
+        return interview_result.id
 
-    # PDF 생성이 안된 경우 (예외 처리)
-    raise HTTPException(status_code=500, detail="Failed to generate PDF report")
+    except Exception as e:
+        db.rollback()
+        print(f"[P2P Service] Error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to save interview result: {e}")
+    finally:
+        db.close()
 
 def reset_p2p_session():
     """

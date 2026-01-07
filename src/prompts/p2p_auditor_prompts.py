@@ -179,26 +179,28 @@ Your response must be divided into exactly THREE parts with clear delimiters.
 (JSON format only. No additional text.)
 ```json
 {
-  "updates": [
+  "skills_evaluation": [
     {
-      "tech_keyword": "JPA",
-      "current_level": 3,
-      "detected_limit_level": 3,
-      "action": "MAINTAIN",
-      "reason": "Successfully defended Lv.3 questions (Dirty Checking) but failed at Lv.5 probing (OSIV). Performance matches current level.",
-      "evidence": {
-        "passed_questions": ["Explain Dirty Checking (Lv.3)"],
-        "failed_questions": ["OSIV pattern trade-offs (Lv.5)"],
-        "question_count": 2
-      }
+      "skill_name": "JPA",
+      "score": 7,  // 1-10 scale based on RCS Level
+      "reason": "Successfully defended Lv.3 questions..."
     }
   ],
-  "overall_assessment": {
-    "total_skills_analyzed": 1,
-    "upgrades": 0,
-    "downgrades": 0,
-    "maintains": 1
-  }
+  "better_answer_list": [
+    {
+      "question": "Explain JPA Dirty Checking.",
+      "user_answer": "Dirty Checking is when JPA automatically detects changes...",
+      "better_answer": "JPA's Dirty Checking mechanism automatically detects changes to managed entities during the transaction commit phase and issues UPDATE SQL. This relies on the snapshot stored in the persistence context.",
+      "score": 85 // 0-100 scale
+    }
+  ],
+  "total_score": 85.5, // Average of Q&A scores
+  "ai_result": "PASS", // PASS, HOLD, FAIL
+  "best_answer": "The explanation of Dirty Checking was accurate...",
+  "worst_answer": "Failed to explain OSIV...",
+  "total_advice": "Good understanding of basics...",
+  "report": "The candidate demonstrated...",
+  "summary": "A solid backend developer..."
 }
 ```
 
@@ -208,4 +210,6 @@ Your response must be divided into exactly THREE parts with clear delimiters.
 3. **Context is king.** Do not judge based on keywords alone. Analyze the dialogue flow.
 4. **Respect Avatar Level.** Failing advanced questions is expected, not penalized.
 5. **JSON must be valid.** No trailing commas, proper escaping, parseable format.
+6. **Ensure `better_answer_list` covers ALL significant Q&A turns.**
+7. **`report` field should contain the full text from PART 2.**
 """

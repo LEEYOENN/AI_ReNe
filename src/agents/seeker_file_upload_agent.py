@@ -90,10 +90,11 @@ def parse_resume_with_llm(text_content: str, file_type: str = "resume") -> Dict[
 def extract_ncs_level(markdown_text: str) -> str:
     """
     Markdown에서 NCS 레벨 추출
-    Format: - **NCS Level:** **Lv. {N}**
+    Format: - **NCS Level:** **Lv. {N}** (or without bold)
     """
-    pattern = r'-\s*\*\*NCS Level:\*\*\s*\*\*(.+?)\*\*'
-    match = re.search(pattern, markdown_text)
+    # **Lv. {N}** 또는 Lv. {N} 모두 허용하고, 뒤에 괄호나 문자가 와도 처리
+    pattern = r'-\s*\*\*NCS Level:\*\*\s*(?:\*\*)?(.+?)(?:\*\*|\s*\(|$)'
+    match = re.search(pattern, markdown_text, re.MULTILINE)
     if match:
         return match.group(1).strip()
     return "Unknown"
@@ -102,10 +103,10 @@ def extract_ncs_level(markdown_text: str) -> str:
 def extract_rcs_level(markdown_text: str) -> str:
     """
     Markdown에서 RCS 레벨 추출
-    Format: - **RCS Level:** **Lv. {M}**
+    Format: - **RCS Level:** **Lv. {M}** (or without bold)
     """
-    pattern = r'-\s*\*\*RCS Level:\*\*\s*\*\*(.+?)\*\*'
-    match = re.search(pattern, markdown_text)
+    pattern = r'-\s*\*\*RCS Level:\*\*\s*(?:\*\*)?(.+?)(?:\*\*|\s*\(|$)'
+    match = re.search(pattern, markdown_text, re.MULTILINE)
     if match:
         return match.group(1).strip()
     return "Unknown"
@@ -114,10 +115,10 @@ def extract_rcs_level(markdown_text: str) -> str:
 def extract_talent_type(markdown_text: str) -> str:
     """
     Markdown에서 Talent Type 추출
-    Format: - **Talent Type:** **{TYPE}**
+    Format: - **Talent Type:** **{TYPE}** (or without bold)
     """
-    pattern = r'-\s*\*\*Talent Type:\*\*\s*\*\*(.+?)\*\*'
-    match = re.search(pattern, markdown_text)
+    pattern = r'-\s*\*\*Talent Type:\*\*\s*(?:\*\*)?(.+?)(?:\*\*|\s*\(|$)'
+    match = re.search(pattern, markdown_text, re.MULTILINE)
     if match:
         return match.group(1).strip()
     return "LEARNER" # 기본값

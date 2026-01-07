@@ -282,24 +282,26 @@
         }
         .project-header {
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
+            flex-direction: column;
+            gap: 0.5rem;
             margin-bottom: 0.75rem;
         }
         .project-title {
             font-weight: 700;
             font-size: 1.1rem;
+            line-height: 1.4;
             color: var(--text-primary);
         }
         .role-badge {
+            align-self: flex-start;
             background-color: #eff6ff;
             color: #2563eb;
-            font-size: 0.7rem;
-            padding: 0.25rem 0.5rem;
-            border-radius: 9999px;
-            font-weight: 700;
-            text-transform: uppercase;
-            white-space: nowrap;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            font-weight: 600;
+            white-space: normal;
+            word-break: break-all;
         }
         .project-desc {
             font-size: 0.9rem;

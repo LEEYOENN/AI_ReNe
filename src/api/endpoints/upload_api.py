@@ -16,7 +16,7 @@ upload_router = APIRouter(prefix="/upload", tags=["File Upload"])
 @upload_router.post("/jobseeker-docs", response_model=FileUploadResponse)
 async def upload_jobseeker_docs(
     file: UploadFile = File(...),
-    jobseeker_id: int = Form(...),
+    user_id: int = Form(...),
     file_type: str = Form("portfolio"),
     db: Session = Depends(get_db)
 ):
@@ -42,12 +42,12 @@ async def upload_jobseeker_docs(
         )
     
     # DB에서 사용자 조회 (ID 기준)
-    jobseeker = db.query(Jobseeker).filter(Jobseeker.id == jobseeker_id).first()
+    jobseeker = db.query(Jobseeker).filter(Jobseeker.id == user_id).first()
     
     if not jobseeker:
         raise HTTPException(
             status_code=404,
-            detail=f"해당 ID({jobseeker_id})를 가진 구직자를 찾을 수 없습니다."
+            detail=f"해당 ID({user_id})를 가진 구직자를 찾을 수 없습니다."
         )
     
     user_id = jobseeker.id

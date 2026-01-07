@@ -182,11 +182,14 @@
 <div class="control-panel">
     <input type="number" id="input-jobseeker-id" value="1" placeholder="ID">
     <button onclick="fetchData()">결과 조회</button>
+    <button onclick="sendEmail()" style="background-color: #10b981; margin-left: 5px;">📧 메일 전송</button>
 </div>
 
 <script>
     // API 주소 (환경에 맞게 변경하세요)
     const API_BASE_URL = "http://100.115.252.51:8000";
+
+    let currentData = null;
 
     // [NEW] 페이지 로드 시 URL 파라미터 확인 및 자동 실행
     document.addEventListener("DOMContentLoaded", () => {
@@ -224,6 +227,8 @@
             }
 
             const data = await response.json();
+
+            currentData = data; // 전역 변수에 저장 (메일 전송용)
             renderReport(data);
 
         } catch (error) {
@@ -348,6 +353,52 @@
         window.requestAnimationFrame(step);
     }
 
+    // 이메일 전송 함수 추가
+    async function sendEmail() {
+        if (!currentData || !currentData.jobseeker_email) {
+            alert("조회된 데이터가 없거나 이메일 정보가 없습니다.");
+            return;
+        }
+
+        const btn = event.target; // 클릭된 버튼
+        const originalText = btn.textContent;
+
+        if (!confirm(`${currentData.jobseeker_email} 주소로 리포트를 전송하시겠습니까?`)) return;
+
+        try {
+            btn.textContent = "전송 중...";
+            btn.disabled = true;
+            // 1. 현재 HTML 전체 가져오기
+            // 컨트롤 패널(버튼들)은 이메일에 포함되면 안 되므로 숨김 처리 후 가져오기
+            document.querySelector('.control-panel').style.display = 'none';
+            const fullHtml = document.documentElement.outerHTML;
+            document.querySelector('.control-panel').style.display = 'block'; // 다시 보이게
+
+            // 2. 백엔드로 전송
+            const response = await fetch(`${API_BASE_URL}/api/v1/company/ai-interview/send-email`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: [currentData.jobseeker_email],
+                    html_content: fullHtml
+                })
+            });
+
+            if (!response.ok) throw new Error("이메일 전송 실패");
+
+            const result = await response.json();
+            alert("성공적으로 전송되었습니다!");
+
+        } catch (error) {
+            console.error(error);
+            alert("전송 중 오류가 발생했습니다: " + error.message);
+        } finally {
+            btn.textContent = originalText;
+            btn.disabled = false;
+        }
+    }
     // [테스트용] 백엔드 연결 안됐을 때 보여줄 가짜 데이터
     function renderMockData() {
         const mock = {
@@ -355,6 +406,10 @@
             job_group_id: 3,
             session_id: "mock-session-uuid-1234",
             end_time: "2025.12.17 18:54",
+            jobseeker_name: "홍길동",
+            company_name: "테크스타트업",
+            job_group_name: "백엔드 개발자",
+            jobseeker_email: "test_user@example.com",
             total_score: 87.5,
             ai_result: "PASS",
             summary: "기술적 이해도가 매우 높으며, 실무 문제 해결 능력이 뛰어난 지원자입니다.",
@@ -383,6 +438,9 @@
             worst_answer: "Kubernetes 파드 스케일링 전략에 대해 구체적인 메트릭 기준을 제시하지 못했습니다.",
             total_advice: "기술적 깊이는 충분하므로, 면접 시 결론부터 말하는 두괄식 화법을 연습한다면 더 좋은 평가를 받을 수 있을 것입니다."
         };
+
+        currentData = mock;
+        
         console.log("Rendering Mock Data...");
         renderReport(mock);
     }

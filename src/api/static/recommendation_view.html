@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI ReNe Recommendation View</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .tabs { display: flex; margin-bottom: 20px; }
+        .tab { padding: 10px 20px; cursor: pointer; border: 1px solid #ccc; background: #f0f0f0; }
+        .tab.active { background: #fff; border-bottom: 1px solid #fff; font-weight: bold; }
+        .content { display: none; border: 1px solid #ccc; padding: 20px; }
+        .content.active { display: block; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: top; }
+        th { background-color: #f2f2f2; }
+        .score-details { font-size: 0.9em; color: #555; }
+        .swot { font-size: 0.9em; }
+        .swot ul { margin: 5px 0; padding-left: 20px; }
+        .btn { padding: 5px 10px; background-color: #007bff; color: white; border: none; cursor: pointer; }
+        .btn:hover { background-color: #0056b3; }
+        .summary { font-style: italic; color: #333; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI ReNe Recommendation System</h1>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="openTab('jobseeker', this)">Jobseeker View</div>
+            <div class="tab" onclick="openTab('company', this)">Company View</div>
+        </div>
+
+        <div id="jobseeker" class="content active">
+            <h2>My Recommended Companies</h2>
+            <label>Jobseeker ID: <input type="number" id="jsIdInput" value="1"></label>
+            <button class="btn" onclick="loadJobseekerRecommendations()">Load</button>
+            <div id="jsResults"></div>
+        </div>
+
+        <div id="company" class="content">
+            <h2>Recommended Candidates</h2>
+            <label>Company ID: <input type="number" id="cpIdInput" value="4"></label>
+            <button class="btn" onclick="loadCompanyRecommendations()">Load</button>
+            <div id="cpResults"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = "/api/v1";
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const type = urlParams.get('type');
+            const id = urlParams.get('id');
+
+            if (type && id) {
+                // Hide tabs and inputs for a cleaner "embedded" view
+                document.querySelector('.tabs').style.display = 'none';
+                document.querySelectorAll('.content h2').forEach(el => el.style.display = 'none');
+                document.querySelectorAll('.content label').forEach(el => el.style.display = 'none');
+                document.querySelectorAll('.content > button').forEach(el => el.style.display = 'none');
+
+                if (type === 'company') {
+                    openTab('company');
+                    document.getElementById('cpIdInput').value = id;
+                    loadCompanyRecommendations();
+                } else if (type === 'jobseeker') {
+                    openTab('jobseeker');
+                    document.getElementById('jsIdInput').value = id;
+                    loadJobseekerRecommendations();
+                }
+            }
+        });
+
+        function openTab(tabName, btnElement) {
+            document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            if (btnElement) {
+                btnElement.classList.add('active');
+            }
+        }
+
+        async function loadJobseekerRecommendations() {
+            const id = document.getElementById('jsIdInput').value;
+            const res = await fetch(`${API_BASE}/recommendations/jobseeker/${id}`);
+            const data = await res.json();
+            renderJobseekerTable(data);
+        }
+
+        async function loadCompanyRecommendations() {
+            const id = document.getElementById('cpIdInput').value;
+            const res = await fetch(`${API_BASE}/recommendations/company/${id}`);
+            const data = await res.json();
+            renderCompanyTable(data);
+        }
+
+        function renderJobseekerTable(data) {
+            let html = '<table><thead><tr><th>Company / Notice</th><th>Score</th><th>Details</th><th>SWOT Analysis</th><th>Summary</th></tr></thead><tbody>';
+            data.forEach(item => {
+                html += `<tr>
+                    <td><strong>${item.company_name}</strong><br>${item.notice_title}</td>
+                    <td>${item.total_score.toFixed(1)}</td>
+                    <td>
+                        Tech: ${item.score_details.technical}<br>
+                        Prob: ${item.score_details.problem_solving}<br>
+                        Cult: ${item.score_details.culture}<br>
+                        Grow: ${item.score_details.growth}
+                    </td>
+                    <td class="swot">
+                        <strong>S:</strong> ${item.swot_analysis.strengths.join(', ')}<br>
+                        <strong>W:</strong> ${item.swot_analysis.weaknesses.join(', ')}<br>
+                        <strong>O:</strong> ${item.swot_analysis.opportunities.join(', ')}<br>
+                        <strong>T:</strong> ${item.swot_analysis.threats.join(', ')}
+                    </td>
+                    <td><div class="summary">${item.summary || 'N/A'}</div></td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            document.getElementById('jsResults').innerHTML = html;
+        }
+
+        function renderCompanyTable(data) {
+            let html = '<table><thead><tr><th>Candidate</th><th>Score</th><th>Details</th><th>SWOT Analysis</th><th>Summary</th><th>Action</th></tr></thead><tbody>';
+            data.forEach(item => {
+                html += `<tr>
+                    <td><strong>${item.jobseeker_name}</strong><br>${item.jobseeker_email}</td>
+                    <td>${item.total_score.toFixed(1)}</td>
+                    <td>
+                        Tech: ${item.score_details.technical}<br>
+                        Prob: ${item.score_details.problem_solving}<br>
+                        Cult: ${item.score_details.culture}<br>
+                        Grow: ${item.score_details.growth}
+                    </td>
+                    <td class="swot">
+                        <strong>S:</strong> ${item.swot_analysis.strengths.join(', ')}<br>
+                        <strong>W:</strong> ${item.swot_analysis.weaknesses.join(', ')}<br>
+                        <strong>O:</strong> ${item.swot_analysis.opportunities.join(', ')}<br>
+                        <strong>T:</strong> ${item.swot_analysis.threats.join(', ')}
+                    </td>
+                    <td><div class="summary">${item.summary || 'N/A'}</div></td>
+                    <td>
+                        <button class="btn" onclick="sendInvite(${item.jobseeker_id}, ${item.recruitment_notice_id})">면접 요청</button>
+                    </td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            document.getElementById('cpResults').innerHTML = html;
+        }
+
+        async function sendInvite(jobseekerId, noticeId) {
+            if(!confirm('면접 요청을 보내시겠습니까?')) return;
+            
+            try {
+                const res = await fetch(`${API_BASE}/interview/invite`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ jobseeker_id: jobseekerId, recruitment_notice_id: noticeId })
+                });
+                
+                if (res.ok) {
+                    alert('면접 요청을 보냈습니다.');
+                } else {
+                    const err = await res.json();
+                    alert('Error: ' + err.detail);
+                }
+            } catch (e) {
+                alert('Error sending invite');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -26,6 +26,7 @@ from .document import (
     CompanyIntroduction,
     RecruitmentNotice
 )
+from .recommendation import RecommendationResult
 
 
 

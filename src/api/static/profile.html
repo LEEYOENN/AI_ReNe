@@ -282,24 +282,26 @@
         }
         .project-header {
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
+            flex-direction: column;
+            gap: 0.5rem;
             margin-bottom: 0.75rem;
         }
         .project-title {
             font-weight: 700;
             font-size: 1.1rem;
+            line-height: 1.4;
             color: var(--text-primary);
         }
         .role-badge {
+            align-self: flex-start;
             background-color: #eff6ff;
             color: #2563eb;
-            font-size: 0.7rem;
-            padding: 0.25rem 0.5rem;
-            border-radius: 9999px;
-            font-weight: 700;
-            text-transform: uppercase;
-            white-space: nowrap;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            font-weight: 600;
+            white-space: normal;
+            word-break: break-all;
         }
         .project-desc {
             font-size: 0.9rem;
@@ -417,7 +419,7 @@
                 <div class="card-header"><i class="fas fa-medal"></i> 인증 & 성향</div>
                 <div style="display: flex; gap: 1rem; align-items: center; height: 100%;">
                     <div style="flex: 1; text-align: center;">
-                        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;" id="p-badge-icon">🌱</div>
+                        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;" id="p-badge-icon">🏆</div>
                         <div style="font-weight: 700; font-size: 1.1rem;" id="p-badge-text">Sprout</div>
                     </div>
                     <div style="width: 1px; height: 60px; background: #e5e7eb;"></div>
@@ -451,14 +453,6 @@
                     <!-- Career list -->
                 </div>
             </div>
-
-            <!-- 8. Projects (4x2) -->
-            <div class="card col-span-4 row-span-2">
-                <div class="card-header"><i class="fas fa-rocket"></i> Key Projects</div>
-                <div class="project-grid" id="p-projects">
-                    <!-- Projects grid -->
-                </div>
-            </div>
         </div>
     </div>
 
@@ -476,6 +470,7 @@
                 renderProfile(data);
             } catch (error) {
                 console.error('Error:', error);
+                // alert('프로필 정보를 불러오는데 실패했습니다.');
             }
         }
 
@@ -583,59 +578,6 @@
                 });
             } else {
                 careerContainer.innerHTML = '<p style="color: #9ca3af;">경력 정보가 없습니다.</p>';
-            }
-
-            // 7. Projects (Metrics & Tech Stack)
-            const projectContainer = document.getElementById('p-projects');
-            projectContainer.innerHTML = '';
-            if (data.projects && data.projects.length > 0) {
-                data.projects.forEach(proj => {
-                    const item = document.createElement('div');
-                    item.className = 'project-item';
-                    
-                    const title = proj.project_name || proj.name || "Untitled Project";
-                    let rawDesc = proj.description || proj.summary || "No description available.";
-                    const role = proj.position || proj.role || "Contributor";
-                    
-                    // 1. Markdown Parsing
-                    let descHtml = marked.parse(rawDesc);
-
-                    // 2. Metrics Highlighting (Apply to parsed HTML)
-                    // Simple regex to bold numbers followed by % or '배' or '개'
-                    descHtml = descHtml.replace(/(\d+(?:%|배|개|건|ms|s))/g, '<span class="metric-highlight">$1</span>');
-
-                    // 3. Tech Keyword Highlighting (Optional enhancement)
-                    // Highlight known tech keywords if they appear in text but aren't already code blocks
-                    // This is a simple heuristic.
-                    const techKeywords = ["Kotlin", "Java", "Python", "Jetpack Compose", "MVI", "MVVM", "Clean Architecture", "Retrofit", "Room", "Glide", "Hilt", "Coroutines", "Flow"];
-                    techKeywords.forEach(tech => {
-                        // Avoid replacing inside existing tags
-                        const regex = new RegExp(`(?<!<[^>]*)\\b${tech}\\b`, 'g');
-                        descHtml = descHtml.replace(regex, `<code>${tech}</code>`);
-                    });
-
-                    // Tech Stack Tags
-                    let techStackHtml = '';
-                    if (proj.tech_stack && proj.tech_stack.length > 0) {
-                        techStackHtml = '<div class="project-tech-stack">';
-                        proj.tech_stack.forEach(tech => {
-                            techStackHtml += `<span class="project-tag">${tech}</span>`;
-                        });
-                        techStackHtml += '</div>';
-                    }
-
-                    item.innerHTML = `
-                        <div class="project-header">
-                            <div class="project-title">${title}</div>
-                            <div class="role-badge">${role}</div>
-                        </div>
-                        <div class="project-desc">${descHtml}</div>
-                        ${techStackHtml}
-                    `;
-                    projectContainer.appendChild(item);
-                });
-            } else {
-                projectContainer.innerHTML = '<p style="color: #9ca3af;">등록된 프로젝트가 없습니다.</p>';
             }
         }
 

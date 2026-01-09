@@ -3,7 +3,9 @@ import os, sys
 import uuid
 import base64
 from datetime import datetime
-from fastapi import UploadFile, HTTPException
+from premailer import transform
+from fastapi import UploadFile, HTTPException, BackgroundTasks
+from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
 from src.repositories.resume_repository.resume_repository import ResumeRepository
 from src.repositories.portfolio_repository.portfolio_repository import PortfolioRepository
@@ -20,6 +22,7 @@ from src.utils.audio_file_utils import pcm_to_wav_bytes
 from src.schemas.company_ai_interview_schemas import company_ai_interview_request_dto, company_ai_interview_response_dto
 from src.repositories.company_ai_interview_session_repository.company_ai_interview_session_repository import CompanyAIInterviewSessionRepository
 from src.models.interview import CompanyAIInterviewSession
+from src.core.config import settings
 
 class CompanyAIInterviewService:
     def __init__(self, db: Session):
@@ -242,7 +245,7 @@ class CompanyAIInterviewService:
             if ai_audio_bytes:
                 ai_audio_base64 = base64.b64encode(ai_audio_bytes).decode('utf-8')
 
-            print(f"면접 완료. session_id: {session_id}, current_turn: {session_record.current_turn}\ninterview_stage: {session_record.interview_stage}")
+            print(f"\n면접 완료. \nsession_id: {session_id}, \ncurrent_turn: {session_record.current_turn}\ninterview_stage: {session_record.interview_stage}\n")
             return company_ai_interview_response_dto.InterviewResponse(
                 message="200 OK, 면접 완료.",
                 session_id=session_id,
@@ -270,7 +273,7 @@ class CompanyAIInterviewService:
 
         # 7. Response 결과 반환
 
-        print(f"인터뷰 진행 중. session_id: {session_id}, current_turn: {session_record.current_turn}\ninterview_stage: {session_record.interview_stage}")
+        print(f"\n인터뷰 진행 중. \nsession_id: {session_id}, \ncurrent_turn: {session_record.current_turn}\ninterview_stage: {session_record.interview_stage}\n")
         return company_ai_interview_response_dto.InterviewResponse(
             message="200 OK, 인터뷰 진행 중.",
             session_id=session_id,
@@ -395,6 +398,7 @@ class CompanyAIInterviewService:
         jobseeker_name = interview_result_row.jobseeker_name        # .label("jobseeker_name")으로 지정한 값
         company_name = interview_result_row.company_name
         job_group_name = interview_result_row.job_group_name
+        jobseeker_email = interview_result_row.jobseeker_email
 
         # 날짜 포맷팅 로직 (YYYY.MM.DD HH:MM 형식)
         formatted_end_time = None
@@ -410,6 +414,7 @@ class CompanyAIInterviewService:
             jobseeker_name = jobseeker_name,
             company_name = company_name,
             job_group_name = job_group_name,
+            jobseeker_email = jobseeker_email, 
             report = interview_result.report,
             summary = interview_result.summary,
             total_score = interview_result.total_score,
@@ -418,7 +423,7 @@ class CompanyAIInterviewService:
             best_answer = interview_result.best_answer,
             worst_answer = interview_result.worst_answer,
             total_advice = interview_result.total_advice,
-            better_answer_list = interview_result.better_answer_list,
+            better_answer_list = interview_result.better_answer_list or [],
             end_time = formatted_end_time
         )
         
@@ -430,3 +435,35 @@ class CompanyAIInterviewService:
         if ncs_level -2 >= rcs_level:
             return "BUBBLE"
         return "LEARNER"
+    
+    async def send_interview_report_to_email(self, email, subject, html_content, background_tasks: BackgroundTasks):
+        # CSS 인라인 변환
+        inline_html = transform(html_content)
+
+        # 메일 메시지 구성
+        message = MessageSchema(
+            subject=subject,
+            recipients=email,
+            body=inline_html,
+            subtype=MessageType.html
+        )
+
+        conf = ConnectionConfig(
+            MAIL_USERNAME=settings.MAIL_USERNAME,
+            MAIL_PASSWORD=settings.MAIL_PASSWORD,    
+            MAIL_FROM=settings.MAIL_FROM,
+            MAIL_PORT=settings.MAIL_PORT,
+            MAIL_SERVER=settings.MAIL_SERVER,    
+            MAIL_STARTTLS=settings.MAIL_STARTTLS,
+            MAIL_SSL_TLS=settings.MAIL_SSL_TLS,
+            USE_CREDENTIALS=settings.USE_CREDENTIALS,
+            VALIDATE_CERTS=settings.VALIDATE_CERTS
+        )
+
+        # 메일 발송 객체
+        fm = FastMail(conf)
+
+        # 사용자를 기다리게 하지 않고 백그라운드에서 전송
+        background_tasks.add_task(fm.send_message, message)
+
+        return "200 OK, 메일 발송 완료."

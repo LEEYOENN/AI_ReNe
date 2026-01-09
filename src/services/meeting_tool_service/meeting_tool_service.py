@@ -41,7 +41,6 @@ def _parse_with_open_ai(content: str, system_prompt: str) -> dict:
     chain = chat_prompt | llm | JsonOutputParser()
     return chain.invoke({"content": content})
 
-
 def format_for_tasks(task_list: list) -> str:
     """ 리스트 데이터를 - (작업 이름) 작업 내용 형식으로 변환 """
     if not task_list: return ""

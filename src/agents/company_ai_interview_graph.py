@@ -85,7 +85,6 @@ class FinalAnalystOutput(BaseModel):
     best_answer: str = Field(description="면접자의 최고의 답변 내용 - 최고의 답변인 이유")
     worst_answer: str = Field(description="면접자의 최악의 답변 내용 - 최악의 답변인 이유")
     total_feedback_for_jobseeker: str = Field(description="지원자에게 줄 AI의 피드백")
-    qna_feedback_list: List[QnAFeedback] = Field(description="각 질문에 대한 유저 답변과 AI의 모범 답안 비교 리스트")
     rcs_level: int = Field(description="RCS 점수 (1~8 사이의 정수)")
 
 
@@ -127,7 +126,7 @@ class CompanyAIInterviewAgent:
         elif current_turn == 9:
             current_stage = "LAST_COMMENTS" # [NEW] 마지막 발언 기회
         elif current_turn >= 10:
-            current_stage = "CLOSING"       # [NEW] 찐 종료 인사
+            current_stage = "CLOSING"       # [NEW] 진짜 종료 인사
         
         # 지침 설정
         is_stage_change_turn = current_turn in [2, 5, 8] # 예: 스테이지가 바뀌는 턴
@@ -292,7 +291,6 @@ class CompanyAIInterviewAgent:
                 "worst_answer": "-",
                 "total_feedback_for_jobseeker": "-",
                 "rcs_level": 1,
-                "qna_feedback_list": [],
             }
 
         # DB Payload 구성

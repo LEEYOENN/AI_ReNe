@@ -164,6 +164,8 @@ class CompanyAIInterview(Base):
     best_answer = Column(Text, nullable=False)
     worst_answer = Column(Text, nullable=False)
     total_advice = Column(Text, nullable=False)
+    # [NEW] 모범 답안 리스트 저장용 JSON 컬럼
+    better_answer_list = Column(JSON, nullable=True)
     end_time = Column(DateTime, nullable=False)
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
 

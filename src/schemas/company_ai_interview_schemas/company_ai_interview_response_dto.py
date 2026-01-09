@@ -33,7 +33,8 @@ class InterviewResultResponse(BaseModel):
     jobseeker_name: Optional[str] = Field(None, description="구직자 이름")
     company_name: Optional[str] = Field(None, description="기업 이름")
     job_group_name: Optional[str] = Field(None, description="직군 이름")
-    
+    jobseeker_email: str = Field(None, description="구직자 이메일")
+
     report: str = Field(..., description="상세 면접 리포트")
     summary: str = Field(..., description="면접 한줄 요약")
     total_score: float = Field(..., description="종합 점수")

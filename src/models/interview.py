@@ -164,6 +164,7 @@ class CompanyAIInterview(Base):
     best_answer = Column(Text, nullable=False)
     worst_answer = Column(Text, nullable=False)
     total_advice = Column(Text, nullable=False)
+    better_answer_list = Column(JSON, nullable=True)
     end_time = Column(DateTime, nullable=False)
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
 

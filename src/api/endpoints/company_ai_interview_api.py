@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, BackgroundTasks
 from sqlalchemy.orm import Session
 import os, sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
@@ -33,7 +33,7 @@ async def chat_interview(
     service = CompanyAIInterviewService(db)
     return await service.process_voice_answer(session_id, file)
 
-@router.get("/result/{interview_id}", response_model=company_ai_interview_response_dto.InterviewResultResponse)
+@router.get("/report/{interview_id}", response_model=company_ai_interview_response_dto.InterviewResultResponse)
 async def get_interview_result_by_id(
     interview_id: int,
     db: Session = Depends(get_db)
@@ -48,3 +48,13 @@ async def force_end_interview(
 ):
     service = CompanyAIInterviewService(db)
     return await service.force_end_interview(request.session_id)
+
+@router.post("/report/send-email")
+async def send_interview_report_to_email(
+    request: company_ai_interview_request_dto.EmailRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
+    service = CompanyAIInterviewService(db)
+    result = await service.send_interview_report_to_email(request.email, request.subject, request.html_content, background_tasks)
+    return {"status": "success", "message": result}

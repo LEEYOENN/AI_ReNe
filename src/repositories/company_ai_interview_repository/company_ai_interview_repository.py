@@ -59,6 +59,7 @@ class CompanyAIInterviewRepository:
                 Jobseeker.name.label("jobseeker_name"),
                 Company.name.label("company_name"),
                 JobGroup.name.label("job_group_name"),
+                Jobseeker.email.label("jobseeker_email"),
             )
             # Innter Join 수행
             .join(Jobseeker, CompanyAIInterview.jobseeker_id == Jobseeker.id)
@@ -66,4 +67,18 @@ class CompanyAIInterviewRepository:
             .join(Company, JobGroup.company_id == Company.id)
             .filter(CompanyAIInterview.id == interview_id)
             .first()
+        )
+    
+    def get_by_job_group_id_for_dashboard(self, job_group_id: int):
+        """기업 대시보드에 보여줄 구직자들이 본 면접 리스트를 가져옵니다."""
+        return (
+            self.db.query(
+                CompanyAIInterview,
+                Jobseeker.name.label("jobseeker_name"),
+                Jobseeker.email.label("jobseeker_email"),
+            )
+            .join(Jobseeker, CompanyAIInterview.jobseeker_id == Jobseeker.id)
+            .filter(CompanyAIInterview.job_group_id == job_group_id)
+            .order_by(CompanyAIInterview.created_at.desc())
+            .all()
         )

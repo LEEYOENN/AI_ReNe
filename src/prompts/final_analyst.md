@@ -78,14 +78,4 @@
   "worst_answer": "<string>",
   "total_feedback_for_jobseeker": "<string>",
   "rcs_level": <int>,
-  "better_answer_list": [
-    {{
-      "question": "트랜잭션 격리 수준에 대해 설명해주세요.",
-      "better_answer": "트랜잭션 격리 수준이란 ~ (두괄식 설명) ~ 구체적으로 Read Committed는 ~ 입니다."
-    }},
-    {{
-      "question": "프로젝트에서 가장 힘들었던 점은?",
-      "better_answer": "저는 ~ 프로젝트 당시 ~ 문제를 겪었습니다. (STAR 기법 적용)"
-    }}
-  ]
 }}

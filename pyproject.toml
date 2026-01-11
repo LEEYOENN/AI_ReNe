@@ -51,4 +51,5 @@ dependencies = [
     "pydub>=0.25.1",
     "fastapi-mail>=1.6.1",
     "premailer>=3.10.0",
+    "dotenv>=0.9.9",
 ]

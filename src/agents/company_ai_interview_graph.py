@@ -1,3 +1,6 @@
+# Copyright (c) 2026.01.11 ReNe
+# Author: 이연(Yeon Lee)
+
 from typing import Annotated, List, TypedDict, Union, Optional, Literal, Dict, Any
 from langchain_openai import ChatOpenAI
 from langchain_chroma import Chroma

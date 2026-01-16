@@ -5,3 +5,14 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"
 from api.deps import get_db
 
 router = APIRouter(prefix="/jobseeker/ai-interview", tags=["Jobseeker AI Interview"])
+
+@router.post("/start", response_model=company_ai_interview_response_dto.InterviewResponse)
+async def start_interview(
+        request: company_ai_interview_request_dto.StartInterviewRequest,
+        db: Session = Depends(get_db)
+):
+    """
+    구직자의 AI 모의 면접을 시작합니다.
+    """
+    service = CompanyAIInterviewService(db)
+    return await service.start_new_interview(request)

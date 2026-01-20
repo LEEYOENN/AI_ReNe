@@ -1,3 +1,6 @@
+# Copyright (c) 2026.01.20 ReNe
+# Author: 이연(Yeon Lee)
+
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, BackgroundTasks
 from sqlalchemy.orm import Session
 import os, sys

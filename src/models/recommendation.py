@@ -1,3 +1,6 @@
+# Copyright (c) 2026.01.20 ReNe
+# Author: 이연(Yeon Lee)
+
 import os, sys
 from sqlalchemy import Column, Integer, Float, Boolean, DateTime, ForeignKey, JSON, String, func
 from sqlalchemy.orm import relationship

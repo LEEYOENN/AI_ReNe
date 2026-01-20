@@ -1,3 +1,6 @@
+# Copyright (c) 2026.01.20 ReNe
+# Author: 이연(Yeon Lee)
+
 import os, sys
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, func
 from sqlalchemy.dialects.mysql import LONGTEXT

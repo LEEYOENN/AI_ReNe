@@ -43,8 +43,8 @@ app.add_middleware(
 
 def init_db():
     print("DB 초기화 스크립트 실행...")
-    Base.metadata.drop_all(bind=engine) # 기존 거 싹 지우고 다시 만들려면 주석 해제
-    Base.metadata.create_all(bind=engine) # DB 생성
+    # Base.metadata.drop_all(bind=engine) # 기존 거 싹 지우고 다시 만들려면 주석 해제
+    # Base.metadata.create_all(bind=engine) # DB 생성
     print("모든 테이블이 생성되었습니다.")
 
 # [Data 폴더 마운트] 외부에서 HTML 파일 접근 허용

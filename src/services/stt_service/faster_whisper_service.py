@@ -27,6 +27,10 @@ class FasterWhisperService:
     # STT 모델 로딩 함수
     def initialize_model(self):
         print("Faster-Whisper (Large-v3) STT 모델 로딩 중...")
+        # if torch.backends.mps.is_available():
+        #     device = torch.device("mps")
+        # else:
+        #     device = torch.device("cpu")
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
         compute_type = "float16" if device == 'cuda' else "int8"
         # huggingface의 복잡한 모델 사용 과정을 pipeline으로 자동화 (전처리(tensor로 변환) - 모델 추론 - 후처리(decoding))

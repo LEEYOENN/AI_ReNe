@@ -1,6 +1,5 @@
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel
-from typing import Optional, Dict, Any
 import os, sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 from core.database import engine, Base
@@ -17,8 +16,22 @@ import uvicorn
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 
-app = FastAPI(title="ReNe Project API", version="1.0.0")
+def init_db():
+    print("DB 초기화 스크립트 실행...")
+    # Base.metadata.drop_all(bind=engine) # 기존 거 싹 지우고 다시 만들려면 주석 해제
+    Base.metadata.create_all(bind=engine) # DB 생성
+    print("모든 테이블이 생성되었습니다.")
+
+# 서버 시작 시 무조건 실행될 수 있도록 lifespan 설정
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # 서버 켜질 때 실행
+    init_db()
+    yield
+
+app = FastAPI(title="ReNe Project API", version="1.0.0", lifespan=lifespan)
 
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(p2p_router, prefix="/api/v1")
@@ -41,14 +54,7 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
-def init_db():
-    print("DB 초기화 스크립트 실행...")
-    # Base.metadata.drop_all(bind=engine) # 기존 거 싹 지우고 다시 만들려면 주석 해제
-    # Base.metadata.create_all(bind=engine) # DB 생성
-    print("모든 테이블이 생성되었습니다.")
-
 # [Data 폴더 마운트] 외부에서 HTML 파일 접근 허용
-# 프로젝트 루트의 data 폴더 경로 계산
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../data"))
 
 # /data 경로로 들어오는 요청은 data 폴더의 파일을 보여줌

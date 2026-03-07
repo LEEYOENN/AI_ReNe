@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  # 1. FastAPI 백엔드 서버
+  rene-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rene_backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      # SQLite DB 파일 등 데이터 영구 보존을 위해 로컬 폴더와 연결
+      - ./data:/app/data
+    depends_on:
+      - rene-db
+    restart: unless-stopped
+
+  # 2. MySQL 데이터베이스 서버
+  rene-db:
+    image: mysql:8.0
+    container_name: rene_mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: Skek0033#
+      MYSQL_DATABASE: rene
+    volumes:
+      - mysql_data:/var/lib/mysql # 컨테이너가 꺼져도 DB 데이터가 날아가지 않게 저장
+    restart: unless-stopped
+
+volumes:
+  mysql_data
